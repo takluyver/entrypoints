@@ -93,7 +93,7 @@ def get_single(group, name, path=None):
 
 def get_group_named(group, path=None):
     result = {}
-    for ep in get_group_all(path=path):
+    for ep in get_group_all(group, path=path):
         if ep.name not in result:
             result[ep.name] = ep
     return result
