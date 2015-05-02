@@ -33,3 +33,7 @@ def test_get_single():
     assert ep.module_name == 'foo'
     assert ep.object_name == 'abc'
 
+def test_load():
+    ep = entrypoints.EntryPoint('get_ep', 'entrypoints', 'get_single', None)
+    obj = ep.load()
+    assert obj is entrypoints.get_single
