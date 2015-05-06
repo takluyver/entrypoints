@@ -1,4 +1,5 @@
 import configparser
+from contextlib import contextmanager
 import glob
 from importlib import import_module
 import io
@@ -6,6 +7,7 @@ import itertools
 import os.path as osp
 import re
 import sys
+import warnings
 import zipfile
 
 entry_point_pattern = re.compile(r"""
@@ -13,6 +15,7 @@ entry_point_pattern = re.compile(r"""
 (:(?P<objectname>\w+(\.\w+)*))?
 \s*
 (\[(?P<extras>.+)\])?
+$
 """, re.VERBOSE)
 
 class BadEntryPoint(ValueError):
@@ -21,6 +24,15 @@ class BadEntryPoint(ValueError):
 
     def __str__(self):
         return "Couldn't parse entry point spec: %r" % self.epstr
+
+    @staticmethod
+    @contextmanager
+    def err_to_warnings():
+        try:
+            yield
+        except BadEntryPoint as e:
+            warnings.warn(str(e))
+
 
 class EntryPoint(object):
     def __init__(self, name, module_name, object_name, extras=None, distro=None):
@@ -111,7 +123,8 @@ def get_single(group, name, path=None):
     for config, distro in iter_files_distros(path=path):
         if (group in config) and (name in config[group]):
             epstr = config[group][name]
-            return EntryPoint.from_string(epstr, name, distro)
+            with BadEntryPoint.err_to_warnings():
+                return EntryPoint.from_string(epstr, name, distro)
 
 def get_group_named(group, path=None):
     result = {}
@@ -125,7 +138,8 @@ def get_group_all(group, path=None):
     for config, distro in iter_files_distros(path=path):
         if group in config:
             for name, epstr in config[group].items():
-                result.append(EntryPoint.from_string(epstr, name, distro))
+                with BadEntryPoint.err_to_warnings():
+                    result.append(EntryPoint.from_string(epstr, name, distro))
 
     return result
 

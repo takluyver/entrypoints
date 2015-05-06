@@ -1,4 +1,6 @@
 import os.path as osp
+import pytest
+import warnings
 
 import entrypoints
 
@@ -38,6 +40,21 @@ def test_load():
     obj = ep.load()
     assert obj is entrypoints.get_single
 
+def test_bad():
+    bad_path = [osp.join(samples_dir, 'packages3')]
+
+    with warnings.catch_warnings(record=True) as w:
+        group = entrypoints.get_group_named('entrypoints.test1', bad_path)
+
+    assert 'bad' not in group
+    assert len(w) == 1
+
+    with warnings.catch_warnings(record=True) as w2:
+        ep = entrypoints.get_single('entrypoints.test1', 'bad')
+
+    assert ep is None
+    assert len(w) == 1
+
 def test_parse():
     ep = entrypoints.EntryPoint.from_string(
         'some.module:some.attr [extra1,extra2]', 'foo'
@@ -45,3 +62,7 @@ def test_parse():
     assert ep.module_name == 'some.module'
     assert ep.object_name == 'some.attr'
     assert ep.extras == ['extra1', 'extra2']
+
+def test_parse_bad():
+    with pytest.raises(entrypoints.BadEntryPoint):
+        entrypoints.EntryPoint.from_string("this won't work", 'foo')
