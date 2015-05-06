@@ -1,3 +1,4 @@
+"""Discover and load entry points from installed packages."""
 import configparser
 from contextlib import contextmanager
 import glob
@@ -17,6 +18,8 @@ entry_point_pattern = re.compile(r"""
 (\[(?P<extras>.+)\])?
 $
 """, re.VERBOSE)
+
+__version__ = '0.1'
 
 class BadEntryPoint(ValueError):
     def __init__(self, epstr):
