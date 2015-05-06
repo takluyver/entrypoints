@@ -4,14 +4,30 @@ from importlib import import_module
 import io
 import itertools
 import os.path as osp
+import re
 import sys
 import zipfile
 
+entry_point_pattern = re.compile(r"""
+(?P<modulename>\w+(\.\w+)*)
+(:(?P<objectname>\w+(\.\w+)*))?
+\s*
+(\[(?P<extras>.+)\])?
+""", re.VERBOSE)
+
+class BadEntryPoint(ValueError):
+    def __init__(self, epstr):
+        self.epstr = epstr
+
+    def __str__(self):
+        return "Couldn't parse entry point spec: %r" % self.epstr
+
 class EntryPoint(object):
-    def __init__(self, name, module_name, object_name, distro):
+    def __init__(self, name, module_name, object_name, extras=None, distro=None):
         self.name = name
         self.module_name = module_name
         self.object_name = object_name
+        self.extras = extras
         self.distro = distro
     
     def __repr__(self):
@@ -27,9 +43,15 @@ class EntryPoint(object):
         return obj
     
     @classmethod
-    def from_string(cls, epstr, name, distro):
-        mod, obj = epstr.split(':', 1)
-        return cls(name, mod, obj, distro)
+    def from_string(cls, epstr, name, distro=None):
+        m = entry_point_pattern.match(epstr)
+        if m:
+            mod, obj, extras = m.group('modulename', 'objectname', 'extras')
+            if extras is not None:
+                extras = re.split(',\s*', extras)
+            return cls(name, mod, obj, extras, distro)
+        else:
+            raise BadEntryPoint(epstr)
 
 class Distribution(object):
     def __init__(self, name, version):

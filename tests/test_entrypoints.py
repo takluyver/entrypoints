@@ -37,3 +37,11 @@ def test_load():
     ep = entrypoints.EntryPoint('get_ep', 'entrypoints', 'get_single', None)
     obj = ep.load()
     assert obj is entrypoints.get_single
+
+def test_parse():
+    ep = entrypoints.EntryPoint.from_string(
+        'some.module:some.attr [extra1,extra2]', 'foo'
+    )
+    assert ep.module_name == 'some.module'
+    assert ep.object_name == 'some.attr'
+    assert ep.extras == ['extra1', 'extra2']
