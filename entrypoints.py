@@ -22,6 +22,8 @@ $
 __version__ = '0.1'
 
 class BadEntryPoint(ValueError):
+    """Raised when an entry point can't be parsed.
+    """
     def __init__(self, epstr):
         self.epstr = epstr
 
@@ -50,6 +52,8 @@ class EntryPoint(object):
             (self.name, self.module_name, self.object_name, self.distro)
 
     def load(self):
+        """Load the object to which this entry point refers.
+        """
         obj_name_parts = self.object_name.split('.')
         mod = import_module(self.module_name)
         obj = mod
@@ -59,6 +63,14 @@ class EntryPoint(object):
     
     @classmethod
     def from_string(cls, epstr, name, distro=None):
+        """Parse an entry point from the syntax in entry_points.txt
+
+        :param str epstr: The entry point string (not including 'name =')
+        :param str name: The name of this entry point
+        :param Distribution distro: The distribution in which the entry point was found
+        :rtype: EntryPoint
+        :raises BadEntryPoint: if *epstr* can't be parsed as an entry point.
+        """
         m = entry_point_pattern.match(epstr)
         if m:
             mod, obj, extras = m.group('modulename', 'objectname', 'extras')
@@ -123,6 +135,10 @@ def iter_files_distros(path=None):
             yield cp, distro
 
 def get_single(group, name, path=None):
+    """Find a single entry point.
+
+    Returns an :class:`EntryPoint` object.
+    """
     for config, distro in iter_files_distros(path=path):
         if (group in config) and (name in config[group]):
             epstr = config[group][name]
@@ -130,6 +146,10 @@ def get_single(group, name, path=None):
                 return EntryPoint.from_string(epstr, name, distro)
 
 def get_group_named(group, path=None):
+    """Find a group of entry points with unique names.
+
+    Returns a dictionary of names to :class:`EntryPoint` objects.
+    """
     result = {}
     for ep in get_group_all(group, path=path):
         if ep.name not in result:
@@ -137,6 +157,10 @@ def get_group_named(group, path=None):
     return result
 
 def get_group_all(group, path=None):
+    """Find all entry points in a group.
+
+    Returns a list of :class:`EntryPoint` objects.
+    """
     result = []
     for config, distro in iter_files_distros(path=path):
         if group in config:
