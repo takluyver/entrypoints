@@ -1,2 +1,5 @@
 [entrypoints.test1]
 abc = foo:abc
+
+[blogtool.parsers]
+.rst = some.nested.module:SomeClass.some_classmethod [reST]

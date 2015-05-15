@@ -35,6 +35,14 @@ def test_get_single():
     assert ep.module_name == 'foo'
     assert ep.object_name == 'abc'
 
+def test_dot_prefix():
+    ep = entrypoints.get_single('blogtool.parsers', '.rst', sample_path)
+    assert ep.object_name == 'SomeClass.some_classmethod'
+    assert ep.extras == ['reST']
+
+    group = entrypoints.get_group_named('blogtool.parsers', sample_path)
+    assert set(group.keys()) == {'.rst'}
+
 def test_load():
     ep = entrypoints.EntryPoint('get_ep', 'entrypoints', 'get_single', None)
     obj = ep.load()
