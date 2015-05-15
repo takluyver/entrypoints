@@ -57,11 +57,18 @@ def test_bad():
     assert 'bad' not in group
     assert len(w) == 1
 
-    with warnings.catch_warnings(record=True) as w2:
+    with warnings.catch_warnings(record=True) as w2, \
+            pytest.raises(entrypoints.NoSuchEntryPoint):
         ep = entrypoints.get_single('entrypoints.test1', 'bad')
 
-    assert ep is None
     assert len(w) == 1
+
+def test_missing():
+    with pytest.raises(entrypoints.NoSuchEntryPoint) as ec:
+        entrypoints.get_single('no.such.group', 'no_such_name', sample_path)
+
+    assert ec.value.group == 'no.such.group'
+    assert ec.value.name == 'no_such_name'
 
 def test_parse():
     ep = entrypoints.EntryPoint.from_string(
