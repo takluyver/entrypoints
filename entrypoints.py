@@ -46,7 +46,7 @@ class EntryPoint(object):
         self.object_name = object_name
         self.extras = extras
         self.distro = distro
-    
+
     def __repr__(self):
         return "EntryPoint(%r, %r, %r, %r)" % \
             (self.name, self.module_name, self.object_name, self.distro)
@@ -89,15 +89,27 @@ class Distribution(object):
         return "Distribution(%r, %r)" % (self.name, self.version)
 
 
-def iter_files_distros(path=None):
+def iter_files_distros(path=None, repeated_distro='first'):
     if path is None:
         path = sys.path
+
+    # Distributions found earlier in path will shadow those with the same name
+    # found later. If these distributions used different module names, it may
+    # actually be possible to import both, but in most cases this shadowing
+    # will be correct.
+    distro_names_seen = set()
+
     for folder in path:
         if folder.rstrip('/\\').endswith('.egg'):
             # Gah, eggs
             egg_name = osp.basename(folder)
             if '-' in egg_name:
                 distro = Distribution(*egg_name.split('-')[:2])
+
+                if (repeated_distro == 'first') \
+                        and (distro.name in distro_names_seen):
+                    continue
+                distro_names_seen.add(distro.name)
             else:
                 distro = None
             
@@ -128,6 +140,11 @@ def iter_files_distros(path=None):
             distro_name_version = osp.splitext(osp.basename(osp.dirname(path)))[0]
             if '-' in distro_name_version:
                 distro = Distribution(*distro_name_version.split('-', 1))
+
+                if (repeated_distro == 'first') \
+                        and (distro.name in distro_names_seen):
+                    continue
+                distro_names_seen.add(distro.name)
             else:
                 distro = None
             cp = configparser.ConfigParser()
