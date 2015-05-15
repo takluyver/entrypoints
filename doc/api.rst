@@ -60,3 +60,5 @@ Exceptions
 ----------
 
 .. autoexception:: BadEntryPoint
+
+.. autoexception:: NoSuchEntryPoint

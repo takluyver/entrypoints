@@ -21,7 +21,7 @@ $
 
 __version__ = '0.1'
 
-class BadEntryPoint(ValueError):
+class BadEntryPoint(Exception):
     """Raised when an entry point can't be parsed.
     """
     def __init__(self, epstr):
@@ -37,6 +37,15 @@ class BadEntryPoint(ValueError):
             yield
         except BadEntryPoint as e:
             warnings.warn(str(e))
+
+class NoSuchEntryPoint(Exception):
+    """Raised by :func:`get_single` when no matching entry point is found."""
+    def __init__(self, group, name):
+        self.group = group
+        self.name = name
+
+    def __str__(self):
+        return "No {!r} entry point found in group {!r}".format(self.name, self.group)
 
 
 class EntryPoint(object):
@@ -154,13 +163,16 @@ def iter_files_distros(path=None, repeated_distro='first'):
 def get_single(group, name, path=None):
     """Find a single entry point.
 
-    Returns an :class:`EntryPoint` object.
+    Returns an :class:`EntryPoint` object, or raises :exc:`NoSuchEntryPoint`
+    if no match is found.
     """
     for config, distro in iter_files_distros(path=path):
         if (group in config) and (name in config[group]):
             epstr = config[group][name]
             with BadEntryPoint.err_to_warnings():
                 return EntryPoint.from_string(epstr, name, distro)
+
+    raise NoSuchEntryPoint(group, name)
 
 def get_group_named(group, path=None):
     """Find a group of entry points with unique names.
