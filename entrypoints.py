@@ -63,11 +63,11 @@ class EntryPoint(object):
     def load(self):
         """Load the object to which this entry point refers.
         """
-        obj_name_parts = self.object_name.split('.')
         mod = import_module(self.module_name)
         obj = mod
-        for attr in obj_name_parts:
-            obj = getattr(obj, attr)
+        if self.object_name:
+            for attr in self.object_name.split('.'):
+                obj = getattr(obj, attr)
         return obj
     
     @classmethod

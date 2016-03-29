@@ -48,6 +48,11 @@ def test_load():
     obj = ep.load()
     assert obj is entrypoints.get_single
 
+    # The object part is optional (e.g. pytest plugins use just a module ref)
+    ep = entrypoints.EntryPoint('ep_mod', 'entrypoints', None)
+    obj = ep.load()
+    assert obj is entrypoints
+
 def test_bad():
     bad_path = [osp.join(samples_dir, 'packages3')]
 
