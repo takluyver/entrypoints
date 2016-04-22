@@ -19,7 +19,7 @@ entry_point_pattern = re.compile(r"""
 $
 """, re.VERBOSE)
 
-__version__ = '0.2'
+__version__ = '0.2.1'
 
 class BadEntryPoint(Exception):
     """Raised when an entry point can't be parsed.
