@@ -3,3 +3,7 @@ abc = foo:abc
 
 [blogtool.parsers]
 .rst = some.nested.module:SomeClass.some_classmethod [reST]
+
+[test.case_sensitive]
+Ptangle = pweave.scripts:tangle
+ptangle = pweave.scripts:tangle
