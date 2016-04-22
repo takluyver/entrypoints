@@ -43,6 +43,10 @@ def test_dot_prefix():
     group = entrypoints.get_group_named('blogtool.parsers', sample_path)
     assert set(group.keys()) == {'.rst'}
 
+def test_case_sensitive():
+    group = entrypoints.get_group_named('test.case_sensitive', sample_path)
+    assert set(group.keys()) == {'Ptangle', 'ptangle'}
+
 def test_load():
     ep = entrypoints.EntryPoint('get_ep', 'entrypoints', 'get_single', None)
     obj = ep.load()
