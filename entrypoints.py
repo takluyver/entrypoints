@@ -1,5 +1,4 @@
 """Discover and load entry points from installed packages."""
-import configparser
 from contextlib import contextmanager
 import glob
 from importlib import import_module
@@ -10,6 +9,11 @@ import re
 import sys
 import warnings
 import zipfile
+
+if sys.version_info[0] >= 3:
+    import configparser
+else:
+    from backports import configparser
 
 entry_point_pattern = re.compile(r"""
 (?P<modulename>\w+(\.\w+)*)
