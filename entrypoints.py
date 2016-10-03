@@ -1,4 +1,7 @@
 """Discover and load entry points from installed packages."""
+# Copyright (c) Thomas Kluyver and contributors
+# Distributed under the terms of the MIT license; see LICENSE file.
+
 from contextlib import contextmanager
 import glob
 from importlib import import_module

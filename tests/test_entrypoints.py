@@ -1,3 +1,6 @@
+# Copyright (c) Thomas Kluyver and contributors
+# Distributed under the terms of the MIT license; see LICENSE file.
+
 import os.path as osp
 import pytest
 import warnings
