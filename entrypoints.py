@@ -132,7 +132,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
                 distro_names_seen.add(distro.name)
             else:
                 distro = None
-            
+
             if osp.isdir(folder):
                 ep_path = osp.join(folder, 'EGG-INFO', 'entry_points.txt')
                 if osp.isfile(ep_path):
@@ -152,7 +152,9 @@ def iter_files_distros(path=None, repeated_distro='first'):
                     cp.read_file(fu,
                         source=osp.join(folder, 'EGG-INFO', 'entry_points.txt'))
                 yield cp, distro
-            
+
+            continue
+
         for path in itertools.chain(
             glob.iglob(osp.join(folder, '*.dist-info', 'entry_points.txt')),
             glob.iglob(osp.join(folder, '*.egg-info', 'entry_points.txt'))
