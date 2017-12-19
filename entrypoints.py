@@ -68,8 +68,11 @@ class EntryPoint(object):
         self.distro = distro
 
     def __repr__(self):
-        return "EntryPoint(%r, %r, %r, %r)" % \
-            (self.name, self.module_name, self.object_name, self.distro)
+        extras = ''
+        if self.extras:
+            extras = ", extras=%r"
+        return "EntryPoint(%r, %r, %r%s, distro=%r)" % \
+            (self.name, self.module_name, self.object_name, extras, self.distro)
 
     def load(self):
         """Load the object to which this entry point refers.

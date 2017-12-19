@@ -11,11 +11,21 @@ import sys
 from tempfile import mkstemp
 import zipfile
 
-from entrypoints import Distribution, CaseSensitiveConfigParser
+from entrypoints import Distribution, CaseSensitiveConfigParser, EntryPoint,\
+    entry_point_pattern
 
 if sys.version_info[0] >= 3:
     PY3 = True
     replace = os.replace
+
+    def read_user_cache(path):
+        """Load a JSON file, returning an empty dict if the file is not present"""
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return {}
+
 else:
     PY3 = False
     def replace(src, dst):
@@ -26,6 +36,18 @@ else:
                 if e.errno != errno.ENOENT:
                     raise
         os.rename(src, dst)
+
+
+    def read_user_cache(path):
+        """Load a JSON file, returning an empty dict if the file is not present"""
+        try:
+            with open(path, 'rb') as f:
+                return json.load(f)
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+            return {}
+
 
 def atomic_json_dump(obj, path, **kwargs):
     """Overwrite a JSON file as atomically as possible.
@@ -69,16 +91,6 @@ def get_cache_dir():
         return os.environ.get('LOCALAPPDATA', None) \
                or os.path.expanduser('~\\AppData\\Local')
 
-def read_user_cache(path):
-    """Load a JSON file, returning an empty dict if the file is not present"""
-    try:
-        with open(path, 'rb') as f:
-            return json.load(f)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-        return {}
-
 def write_user_cache(data, path):
     """Write a JSON file atomically, after ensuring that the directory exists"""
     directory = osp.dirname(path)
@@ -92,12 +104,19 @@ def write_user_cache(data, path):
 def entrypoints_from_configparser(cp):
     res = []
     for group_name, group in sorted(cp.items()):
-        for name, objref in sorted(group.items()):
-            res.append({
-                'group': group_name,
-                'name': name,
-                'reference': objref,
-            })
+        for name, epstr in sorted(group.items()):
+            m = entry_point_pattern.match(epstr)
+            if m:
+                mod, obj, extras = m.group('modulename', 'objectname', 'extras')
+                if extras is not None:
+                    extras = [e.strip() for e in extras.split(',')]
+                res.append({
+                    'group': group_name,
+                    'name': name,
+                    'module_name': mod,
+                    'object_name': obj,
+                    'extras': extras,
+                })
     return res
 
 
@@ -163,7 +182,13 @@ class EntryPointsScanner(object):
                 return deepcopy(path_cache)
             return self.entrypoints_from_egg(path)
 
-        path_st = os.stat(path)
+        try:
+            path_st = os.stat(path)
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+            return {'mtime': -1, 'isdir': False, 'distributions': []}
+
         isdir = stat.S_ISDIR(path_st.st_mode)
         # If the cache is up to date, return that
         if path_cache and (path_st.st_mtime == path_cache['mtime']) \
@@ -267,3 +292,25 @@ class EntryPointsScanner(object):
             'distributions': [],
         }
 
+def get_group_all(group, path=None):
+    """Find all entry points in a group.
+
+    Returns a list of :class:`EntryPoint` objects.
+    """
+    result = []
+    for location_ep in EntryPointsScanner().scan(path):
+        for distro in location_ep['distributions']:
+            distro_obj = Distribution(distro['name'], distro['version'])
+            for epinfo in distro['entrypoints']:
+                if epinfo['group'] != group:
+                    continue
+                result.append(EntryPoint(
+                    epinfo['name'], epinfo['module_name'], epinfo['object_name'],
+                    distro=distro_obj
+                ))
+
+    return result
+
+if __name__ == '__main__':
+    for ep in get_group_all('console_scripts'):
+        print(ep)
