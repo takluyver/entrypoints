@@ -4,6 +4,7 @@ import glob
 import io
 import itertools
 import json
+import logging
 import os
 import os.path as osp
 import stat
@@ -13,6 +14,8 @@ import zipfile
 
 from entrypoints import Distribution, CaseSensitiveConfigParser, EntryPoint,\
     entry_point_pattern
+
+log = logging.getLogger(__name__)
 
 if sys.version_info[0] >= 3:
     PY3 = True
@@ -117,6 +120,8 @@ def entrypoints_from_configparser(cp):
                     'object_name': obj,
                     'extras': extras,
                 })
+            else:
+                log.warning("Invalid entry point specification: %r", epstr)
     return res
 
 
@@ -255,8 +260,7 @@ class EntryPointsScanner(object):
                 glob.iglob(osp.join(path, '*.dist-info', 'entry_points.txt')),
                 glob.iglob(osp.join(path, '*.egg-info', 'entry_points.txt'))
         ):
-            distro_name_version = osp.splitext(osp.basename(osp.dirname(path)))[
-                0]
+            distro_name_version = osp.splitext(osp.basename(osp.dirname(path)))[0]
             if '-' in distro_name_version:
                 name, version = distro_name_version.split('-', 1)
             else:
@@ -285,11 +289,37 @@ class EntryPointsScanner(object):
 
         This does not use the cache.
         """
-        # TODO
+        z = zipfile.ZipFile(path)
+        distributions = []
+        for info in z.infolist():
+            if not z.filename.endswith(('.dist-info/entry_points.txt',
+                                        '.egg-info/entry_points.txt')):
+                continue
+            if z.filename.count('/') > 1:
+                continue  # In a subdirectory
+
+            distro_name_version = z.filename.split('/')[0].rsplit('.', 1)[0]
+            if '-' in distro_name_version:
+                name, version = distro_name_version.split('-', 1)
+            else:
+                name, version = None, None
+
+            distro = {
+                'name': name, 'version': version,
+                'entrypoints': []
+            }
+            distributions.append(distro)
+
+            cp = CaseSensitiveConfigParser()
+            with z.open(info) as f:
+                fu = io.TextIOWrapper(f)
+                cp.read_file(fu, source=osp.join(path, z.filename))
+            distro['entrypoints'] = entrypoints_from_configparser(cp)
+
         return {
             'mtime': path_st.st_mtime,
             'isdir': True,
-            'distributions': [],
+            'distributions': distributions,
         }
 
 def get_group_all(group, path=None):
