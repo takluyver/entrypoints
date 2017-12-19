@@ -322,23 +322,26 @@ class EntryPointsScanner(object):
             'distributions': distributions,
         }
 
+def iter_all_epinfo(path=None, cache_file=None):
+    for location_ep in EntryPointsScanner(cache_file=cache_file).scan(path):
+        for distro in location_ep['distributions']:
+            for epinfo in distro['entrypoints']:
+                yield (distro, epinfo)
+
 def get_group_all(group, path=None):
     """Find all entry points in a group.
 
     Returns a list of :class:`EntryPoint` objects.
     """
     result = []
-    for location_ep in EntryPointsScanner().scan(path):
-        for distro in location_ep['distributions']:
-            distro_obj = Distribution(distro['name'], distro['version'])
-            for epinfo in distro['entrypoints']:
-                if epinfo['group'] != group:
-                    continue
-                result.append(EntryPoint(
-                    epinfo['name'], epinfo['module_name'], epinfo['object_name'],
-                    distro=distro_obj
-                ))
-
+    for distro, epinfo in iter_all_epinfo(path=path):
+        if epinfo['group'] != group:
+            continue
+        distro_obj = Distribution(distro['name'], distro['version'])
+        result.append(EntryPoint(
+            epinfo['name'], epinfo['module_name'], epinfo['object_name'],
+            distro=distro_obj
+        ))
     return result
 
 if __name__ == '__main__':
