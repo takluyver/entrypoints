@@ -340,6 +340,8 @@ class EntryPointsScanner(object):
                 cp.read_file(fu, source=osp.join(path, z.filename))
             distro['entrypoints'] = entrypoints_from_configparser(cp, ep_path)
 
+        distributions.sort(key=lambda d: "%s-%s" % (d['name'], d['version']))
+
         return {
             'mtime': path_st.st_mtime,
             'isdir': True,

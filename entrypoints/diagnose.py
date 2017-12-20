@@ -22,7 +22,7 @@ def check_shadowing():
         for distro in locn_ep['distributions']:
             distros_by_name[distro['name']].append((path, distro))
 
-    for distro_name, found in distros_by_name.items():
+    for distro_name, found in sorted(distros_by_name.items(), key=str):
         if len(found) > 1:
             any_shadowed = True
             print("Multiple installations of {!r}:".format(distro_name))
