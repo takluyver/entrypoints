@@ -58,7 +58,7 @@ else:
         try:
             with open(path, 'rb') as f:
                 return json.load(f)
-        except OSError as e:
+        except IOError as e:
             if e.errno != errno.ENOENT:
                 raise
             return {}
@@ -77,7 +77,7 @@ def atomic_json_dump(obj, path, **kwargs):
             with open(fd, 'w', encoding='utf-8') as f:
                 json.dump(obj, f, **kwargs)
         else:
-            with open(fd, 'wb') as f:
+            with os.fdopen(fd, 'wb') as f:
                 json.dump(obj, f, **kwargs)
         # TODO: chmod?
     except:
