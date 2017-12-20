@@ -239,6 +239,7 @@ class EntryPointsScanner(object):
         if '-' in egg_name:
             name, version = egg_name.split('-')[:2]
         else:
+            log.warning("Can't get name & version from %s", path)
             name = version = None
 
         entrypoints = []
@@ -279,14 +280,16 @@ class EntryPointsScanner(object):
         This does not use the cache.
         """
         distributions = []
-        for path in itertools.chain(
+        for ep_path in itertools.chain(
                 glob.iglob(osp.join(path, '*.dist-info', 'entry_points.txt')),
                 glob.iglob(osp.join(path, '*.egg-info', 'entry_points.txt'))
         ):
-            distro_name_version = osp.splitext(osp.basename(osp.dirname(path)))[0]
+            info_dir = osp.dirname(ep_path)
+            distro_name_version = osp.splitext(osp.basename(info_dir))[0]
             if '-' in distro_name_version:
                 name, version = distro_name_version.split('-', 1)
             else:
+                log.warning("Can't get name & version from %s", info_dir)
                 name = version = None
 
             distro = {
@@ -296,8 +299,8 @@ class EntryPointsScanner(object):
             distributions.append(distro)
 
             cp = CaseSensitiveConfigParser()
-            cp.read(path)
-            distro['entrypoints'] = entrypoints_from_configparser(cp, path)
+            cp.read(ep_path)
+            distro['entrypoints'] = entrypoints_from_configparser(cp, ep_path)
 
         distributions.sort(key=lambda d: "%s-%s" % (d['name'], d['version']))
 
@@ -325,6 +328,7 @@ class EntryPointsScanner(object):
             if '-' in distro_name_version:
                 name, version = distro_name_version.split('-', 1)
             else:
+                log.warning("Can't get name & version from %s %s", path, z.filename)
                 name, version = None, None
 
             distro = {
