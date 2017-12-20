@@ -13,18 +13,7 @@ import sys
 import warnings
 import zipfile
 
-if sys.version_info[0] >= 3:
-    import configparser
-else:
-    from backports import configparser
-
-entry_point_pattern = re.compile(r"""
-(?P<modulename>\w+(\.\w+)*)
-(:(?P<objectname>\w+(\.\w+)*))?
-\s*
-(\[(?P<extras>.+)\])?
-$
-""", re.VERBOSE)
+from .reader import entry_point_pattern, iter_all_epinfo
 
 __version__ = '0.2.3'
 
@@ -53,10 +42,6 @@ class NoSuchEntryPoint(Exception):
 
     def __str__(self):
         return "No {!r} entry point found in group {!r}".format(self.name, self.group)
-
-
-class CaseSensitiveConfigParser(configparser.ConfigParser):
-    optionxform = staticmethod(str)
 
 
 class EntryPoint(object):
@@ -109,79 +94,19 @@ class Distribution(object):
         return "Distribution(%r, %r)" % (self.name, self.version)
 
 
-def iter_files_distros(path=None, repeated_distro='first'):
-    if path is None:
-        path = sys.path
-
-    # Distributions found earlier in path will shadow those with the same name
-    # found later. If these distributions used different module names, it may
-    # actually be possible to import both, but in most cases this shadowing
-    # will be correct.
-    distro_names_seen = set()
-
-    for folder in path:
-        if folder.rstrip('/\\').endswith('.egg'):
-            # Gah, eggs
-            egg_name = osp.basename(folder)
-            if '-' in egg_name:
-                distro = Distribution(*egg_name.split('-')[:2])
-
-                if (repeated_distro == 'first') \
-                        and (distro.name in distro_names_seen):
-                    continue
-                distro_names_seen.add(distro.name)
-            else:
-                distro = None
-            
-            if osp.isdir(folder):
-                ep_path = osp.join(folder, 'EGG-INFO', 'entry_points.txt')
-                if osp.isfile(ep_path):
-                    cp = CaseSensitiveConfigParser()
-                    cp.read(ep_path)
-                    yield cp, distro
-
-            elif zipfile.is_zipfile(folder):
-                z = zipfile.ZipFile(folder)
-                try:
-                    info = z.getinfo('EGG-INFO/entry_points.txt')
-                except KeyError:
-                    continue
-                cp = CaseSensitiveConfigParser()
-                with z.open(info) as f:
-                    fu = io.TextIOWrapper(f)
-                    cp.read_file(fu,
-                        source=osp.join(folder, 'EGG-INFO', 'entry_points.txt'))
-                yield cp, distro
-            
-        for path in itertools.chain(
-            glob.iglob(osp.join(folder, '*.dist-info', 'entry_points.txt')),
-            glob.iglob(osp.join(folder, '*.egg-info', 'entry_points.txt'))
-        ):
-            distro_name_version = osp.splitext(osp.basename(osp.dirname(path)))[0]
-            if '-' in distro_name_version:
-                distro = Distribution(*distro_name_version.split('-', 1))
-
-                if (repeated_distro == 'first') \
-                        and (distro.name in distro_names_seen):
-                    continue
-                distro_names_seen.add(distro.name)
-            else:
-                distro = None
-            cp = CaseSensitiveConfigParser()
-            cp.read(path)
-            yield cp, distro
-
 def get_single(group, name, path=None):
     """Find a single entry point.
 
     Returns an :class:`EntryPoint` object, or raises :exc:`NoSuchEntryPoint`
     if no match is found.
     """
-    for config, distro in iter_files_distros(path=path):
-        if (group in config) and (name in config[group]):
-            epstr = config[group][name]
-            with BadEntryPoint.err_to_warnings():
-                return EntryPoint.from_string(epstr, name, distro)
+    for distro, epinfo in iter_all_epinfo(path=path):
+        if epinfo['group'] == group and epinfo['name'] == name:
+            distro_obj = Distribution(distro['name'], distro['version'])
+            return EntryPoint(
+                epinfo['name'], epinfo['module_name'], epinfo['object_name'],
+                distro=distro_obj
+            )
 
     raise NoSuchEntryPoint(group, name)
 
@@ -202,14 +127,13 @@ def get_group_all(group, path=None):
     Returns a list of :class:`EntryPoint` objects.
     """
     result = []
-    for config, distro in iter_files_distros(path=path):
-        if group in config:
-            for name, epstr in config[group].items():
-                with BadEntryPoint.err_to_warnings():
-                    result.append(EntryPoint.from_string(epstr, name, distro))
-
+    for distro, epinfo in iter_all_epinfo(path=path):
+        if epinfo['group'] != group:
+            continue
+        distro_obj = Distribution(distro['name'], distro['version'])
+        result.append(EntryPoint(
+            epinfo['name'], epinfo['module_name'], epinfo['object_name'],
+            distro=distro_obj
+        ))
     return result
 
-if __name__ == '__main__':
-    import pprint
-    pprint.pprint(get_group_all('console_scripts'))
