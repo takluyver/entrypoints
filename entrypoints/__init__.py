@@ -94,46 +94,46 @@ class Distribution(object):
         return "Distribution(%r, %r)" % (self.name, self.version)
 
 
-def get_single(group, name, path=None):
+def get_single(group, name, path=None, cache_file=None):
     """Find a single entry point.
 
     Returns an :class:`EntryPoint` object, or raises :exc:`NoSuchEntryPoint`
     if no match is found.
     """
-    for distro, epinfo in iter_all_epinfo(path=path):
+    for distro, epinfo in iter_all_epinfo(path=path, cache_file=cache_file):
         if epinfo['group'] == group and epinfo['name'] == name:
             distro_obj = Distribution(distro['name'], distro['version'])
             return EntryPoint(
                 epinfo['name'], epinfo['module_name'], epinfo['object_name'],
-                distro=distro_obj
+                extras=epinfo['extras'], distro=distro_obj
             )
 
     raise NoSuchEntryPoint(group, name)
 
-def get_group_named(group, path=None):
+def get_group_named(group, path=None, cache_file=None):
     """Find a group of entry points with unique names.
 
     Returns a dictionary of names to :class:`EntryPoint` objects.
     """
     result = {}
-    for ep in get_group_all(group, path=path):
+    for ep in get_group_all(group, path=path, cache_file=cache_file):
         if ep.name not in result:
             result[ep.name] = ep
     return result
 
-def get_group_all(group, path=None):
+def get_group_all(group, path=None, cache_file=None):
     """Find all entry points in a group.
 
     Returns a list of :class:`EntryPoint` objects.
     """
     result = []
-    for distro, epinfo in iter_all_epinfo(path=path):
+    for distro, epinfo in iter_all_epinfo(path=path, cache_file=cache_file):
         if epinfo['group'] != group:
             continue
         distro_obj = Distribution(distro['name'], distro['version'])
         result.append(EntryPoint(
             epinfo['name'], epinfo['module_name'], epinfo['object_name'],
-            distro=distro_obj
+            extras=epinfo['extras'], distro=distro_obj
         ))
     return result
 
