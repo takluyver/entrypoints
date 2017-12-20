@@ -343,8 +343,18 @@ class EntryPointsScanner(object):
         }
 
 def iter_all_epinfo(path=None, cache_file=None):
+    # Distributions found earlier in path will shadow those with the same name
+    # found later. If these distributions used different module names, it may
+    # actually be possible to import both, but in most cases this shadowing
+    # will be correct. pkg_resources does something similar.
+    distro_names_seen = set()
+
     for location_ep in EntryPointsScanner(cache_file=cache_file).scan(path):
         for distro in location_ep['distributions']:
+            if distro['name'] in distro_names_seen:
+                continue
+            distro_names_seen.add(distro['name'])
+
             for epinfo in distro['entrypoints']:
                 yield (distro, epinfo)
 
