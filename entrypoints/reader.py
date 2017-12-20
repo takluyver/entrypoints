@@ -119,7 +119,7 @@ def write_user_cache(data, path):
 class CaseSensitiveConfigParser(configparser.ConfigParser):
     optionxform = staticmethod(str)
 
-def entrypoints_from_configparser(cp):
+def entrypoints_from_configparser(cp, path):
     res = []
     for group_name, group in sorted(cp.items()):
         for name, epstr in sorted(group.items()):
@@ -136,7 +136,7 @@ def entrypoints_from_configparser(cp):
                     'extras': extras,
                 })
             else:
-                log.warning("Invalid entry point specification: %r", epstr)
+                log.warning("Invalid entry point %r in %s", epstr, path)
     return res
 
 
@@ -145,7 +145,11 @@ class EntryPointsScanner(object):
         if cache_file is None:
             cache_file = osp.join(get_cache_dir(), 'entrypoints.json')
         self.cache_file = cache_file
-        self.user_cache = read_user_cache(cache_file)
+        if cache_file:
+            self.user_cache = read_user_cache(cache_file)
+        else:
+            self.user_cache = {}
+
 
     def _abspath_multi(self, paths):
         """Like os.path.abspath(), but avoid calling getcwd multiple times"""
@@ -171,7 +175,7 @@ class EntryPointsScanner(object):
                 cache_modified = True
             yield locn_ep
 
-        if cache_modified:
+        if cache_modified and self.cache_file:
             write_user_cache(self.user_cache, self.cache_file)
 
     def rebuild_cache(self, add_locations=None):
@@ -244,7 +248,7 @@ class EntryPointsScanner(object):
             if osp.isfile(ep_path):
                 cp = CaseSensitiveConfigParser()
                 cp.read(ep_path)
-                entrypoints = entrypoints_from_configparser(cp)
+                entrypoints = entrypoints_from_configparser(cp, ep_path)
 
         elif zipfile.is_zipfile(path):
             z = zipfile.ZipFile(path)
@@ -253,12 +257,11 @@ class EntryPointsScanner(object):
             except KeyError:
                 return None
             cp = CaseSensitiveConfigParser()
+            ep_path = osp.join(path, 'EGG-INFO', 'entry_points.txt')
             with z.open(info) as f:
                 fu = io.TextIOWrapper(f)
-                cp.read_file(fu,
-                             source=osp.join(path, 'EGG-INFO',
-                                             'entry_points.txt'))
-                entrypoints = entrypoints_from_configparser(cp)
+                cp.read_file(fu, source=ep_path)
+                entrypoints = entrypoints_from_configparser(cp, ep_path)
 
         return {
             'mtime': path_st.st_mtime,
@@ -294,7 +297,7 @@ class EntryPointsScanner(object):
 
             cp = CaseSensitiveConfigParser()
             cp.read(path)
-            distro['entrypoints'] = entrypoints_from_configparser(cp)
+            distro['entrypoints'] = entrypoints_from_configparser(cp, path)
 
         distributions.sort(key=lambda d: "%s-%s" % (d['name'], d['version']))
 
@@ -331,10 +334,11 @@ class EntryPointsScanner(object):
             distributions.append(distro)
 
             cp = CaseSensitiveConfigParser()
+            ep_path = osp.join(path, z.filename)
             with z.open(info) as f:
                 fu = io.TextIOWrapper(f)
                 cp.read_file(fu, source=osp.join(path, z.filename))
-            distro['entrypoints'] = entrypoints_from_configparser(cp)
+            distro['entrypoints'] = entrypoints_from_configparser(cp, ep_path)
 
         return {
             'mtime': path_st.st_mtime,
