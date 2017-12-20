@@ -184,7 +184,9 @@ class EntryPointsScanner(object):
             # them, so if we've got the path in the cache, trust it without
             # checking the mtime.
             if path_cache is not None:
+                log.debug("Using cached entrypoints for %s", path)
                 return deepcopy(path_cache)
+            log.debug("Scanning entrypoints for %s", path)
             return self.entrypoints_from_egg(path)
 
         try:
@@ -198,10 +200,13 @@ class EntryPointsScanner(object):
         # If the cache is up to date, return that
         if path_cache and (path_st.st_mtime == path_cache['mtime']) \
                 and (isdir == path_cache['isdir']):
+            log.debug("Using cached entrypoints for %s", path)
             return path_cache
         elif isdir:
+            log.debug("Scanning entrypoints for %s", path)
             return self.entrypoints_from_dir(path, path_st)
         elif zipfile.is_zipfile(path):
+            log.debug("Scanning entrypoints for %s", path)
             return self.entrypoints_from_zip(path, path_st)
 
     def entrypoints_from_egg(self, path):
@@ -345,5 +350,6 @@ def get_group_all(group, path=None):
     return result
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     for ep in get_group_all('console_scripts'):
         print(ep)
