@@ -26,6 +26,10 @@ entry_point_pattern = re.compile(r"""
 $
 """, re.VERBOSE)
 
+# If a file with this name is in the root of a site-packages directory, or a zip
+# file, we won't store entrypoints from there in the cache.
+NO_CACHE_MARKER_FILE = '.entrypoints_no_cache'
+
 
 log = logging.getLogger(__name__)
 
@@ -106,15 +110,6 @@ def get_cache_dir():
         return os.environ.get('LOCALAPPDATA', None) \
                or os.path.expanduser('~\\AppData\\Local')
 
-def write_user_cache(data, path):
-    """Write a JSON file atomically, after ensuring that the directory exists"""
-    directory = osp.dirname(path)
-    try:
-        os.makedirs(directory)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-    atomic_json_dump(data, path, indent=2, sort_keys=True)
 
 class CaseSensitiveConfigParser(configparser.ConfigParser):
     optionxform = staticmethod(str)
@@ -145,10 +140,11 @@ class EntryPointsScanner(object):
         if cache_file is None:
             cache_file = osp.join(get_cache_dir(), 'entrypoints.json')
         self.cache_file = cache_file
+        self.non_cacheable_paths = set()
         if cache_file:
-            self.user_cache = read_user_cache(cache_file)
+            self.working_cache = read_user_cache(cache_file)
         else:
-            self.user_cache = {}
+            self.working_cache = {}
 
 
     def _abspath_multi(self, paths):
@@ -161,6 +157,20 @@ class EntryPointsScanner(object):
             res.append(osp.normpath(path))
         return res
 
+    def write_user_cache(self):
+        """Filter cacheable data, ensure the directory exists, write atomically
+        """
+        data = {path: eps for (path, eps) in self.working_cache.items()
+                if path not in self.non_cacheable_paths}
+
+        directory = osp.dirname(self.cache_file)
+        try:
+            os.makedirs(directory)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        atomic_json_dump(data, self.cache_file, indent=2, sort_keys=True)
+
     def scan(self, locations=None):
         """Get entry points from a list of paths (sys.path by default)"""
         if locations is None:
@@ -170,24 +180,25 @@ class EntryPointsScanner(object):
         cache_modified = False
         for path in locations:
             locn_ep = self.entrypoints_for_path(path)
-            if locn_ep != self.user_cache.get(path):
-                self.user_cache[path] = locn_ep
-                cache_modified = True
+            if locn_ep != self.working_cache.get(path):
+                self.working_cache[path] = locn_ep
+                if path not in self.non_cacheable_paths:
+                    cache_modified = True
             yield locn_ep
 
         if cache_modified and self.cache_file:
-            write_user_cache(self.user_cache, self.cache_file)
+            self.write_user_cache()
 
     def rebuild_cache(self, add_locations=None):
         """Rebuild the cache, discard cached data for paths which don't exist"""
         add_locations = self._abspath_multi(add_locations or [])
-        locations = set(self.user_cache).union(add_locations)
-        self.user_cache = {}
+        locations = set(self.working_cache).union(add_locations)
+        self.working_cache = {}
         for path in locations:
             if osp.exists(path):
-                self.user_cache[path] = self.entrypoints_for_path(path)
+                self.working_cache[path] = self.entrypoints_for_path(path)
 
-        write_user_cache(self.user_cache, self.cache_file)
+        self.write_user_cache()
 
     def entrypoints_for_path(self, path):
         """Get the entry points from a given path.
@@ -196,7 +207,7 @@ class EntryPointsScanner(object):
         data is considered valid (since the path includes the version number).
         For other paths, the cache is valid if the stored mtime matches.
         """
-        path_cache = self.user_cache.get(path)
+        path_cache = self.working_cache.get(path)
 
         if path.endswith('.egg'):
             # Egg paths include a version number, and there may be many of
@@ -304,6 +315,9 @@ class EntryPointsScanner(object):
 
         distributions.sort(key=lambda d: "%s-%s" % (d['name'], d['version']))
 
+        if os.path.isfile(os.path.join(path, NO_CACHE_MARKER_FILE)):
+            self.non_cacheable_paths.add(path)
+
         return {
             'mtime': path_st.st_mtime,
             'isdir': True,
@@ -345,6 +359,9 @@ class EntryPointsScanner(object):
             distro['entrypoints'] = entrypoints_from_configparser(cp, ep_path)
 
         distributions.sort(key=lambda d: "%s-%s" % (d['name'], d['version']))
+
+        if NO_CACHE_MARKER_FILE in z.namelist():
+            self.non_cacheable_paths.add(path)
 
         return {
             'mtime': path_st.st_mtime,
