@@ -3,15 +3,9 @@
 # Distributed under the terms of the MIT license; see LICENSE file.
 
 from contextlib import contextmanager
-import glob
 from importlib import import_module
-import io
-import itertools
-import os.path as osp
 import re
-import sys
 import warnings
-import zipfile
 
 from .reader import entry_point_pattern, iter_all_epinfo
 
