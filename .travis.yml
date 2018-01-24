@@ -4,6 +4,7 @@ python:
   - "3.3"
   - "2.7"
 install:
+  - pip install testpath
   - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install configparser; fi
 # command to run tests
 script: py.test
