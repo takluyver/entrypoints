@@ -110,6 +110,20 @@ def get_cache_dir():
         return os.environ.get('LOCALAPPDATA', None) \
                or os.path.expanduser('~\\AppData\\Local')
 
+def locate_cache_file():
+    """Return the location of the per-user cache file.
+
+    Uses ENTRYPOINTS_CACHE_FILE environment variable if present.
+    This may either be set to a path, or to '0' to disable per-user caching.
+    """
+    envvar = os.environ.get('ENTRYPOINTS_CACHE_FILE', '')
+    if envvar == '0':
+        return None
+    elif envvar:
+        return envvar
+    else:
+        return osp.join(get_cache_dir(), 'entrypoints.json')
+
 
 class CaseSensitiveConfigParser(configparser.ConfigParser):
     optionxform = staticmethod(str)
@@ -136,13 +150,11 @@ def entrypoints_from_configparser(cp, path):
 
 
 class EntryPointsScanner(object):
-    def __init__(self, cache_file=None):
-        if cache_file is None:
-            cache_file = osp.join(get_cache_dir(), 'entrypoints.json')
-        self.cache_file = cache_file
+    def __init__(self):
+        self.cache_file = locate_cache_file()
         self.non_cacheable_paths = set()
-        if cache_file:
-            self.working_cache = read_user_cache(cache_file)
+        if self.cache_file:
+            self.working_cache = read_user_cache(self.cache_file)
         else:
             self.working_cache = {}
 
@@ -191,6 +203,8 @@ class EntryPointsScanner(object):
 
     def rebuild_cache(self, add_locations=None):
         """Rebuild the cache, discard cached data for paths which don't exist"""
+        if not self.cache_file:
+            raise RuntimeError("Caching is disabled by environment")
         add_locations = self._abspath_multi(add_locations or [])
         locations = set(self.working_cache).union(add_locations)
         self.working_cache = {}
@@ -369,14 +383,14 @@ class EntryPointsScanner(object):
             'distributions': distributions,
         }
 
-def iter_all_epinfo(path=None, cache_file=None):
+def iter_all_epinfo(path=None):
     # Distributions found earlier in path will shadow those with the same name
     # found later. If these distributions used different module names, it may
     # actually be possible to import both, but in most cases this shadowing
     # will be correct. pkg_resources does something similar.
     distro_names_seen = set()
 
-    for location_ep in EntryPointsScanner(cache_file=cache_file).scan(path):
+    for location_ep in EntryPointsScanner().scan(path):
         for distro in location_ep['distributions']:
             if distro['name'] in distro_names_seen:
                 continue

@@ -88,13 +88,13 @@ class Distribution(object):
         return "Distribution(%r, %r)" % (self.name, self.version)
 
 
-def get_single(group, name, path=None, cache_file=None):
+def get_single(group, name, path=None):
     """Find a single entry point.
 
     Returns an :class:`EntryPoint` object, or raises :exc:`NoSuchEntryPoint`
     if no match is found.
     """
-    for distro, epinfo in iter_all_epinfo(path=path, cache_file=cache_file):
+    for distro, epinfo in iter_all_epinfo(path=path):
         if epinfo['group'] == group and epinfo['name'] == name:
             distro_obj = Distribution(distro['name'], distro['version'])
             return EntryPoint(
@@ -104,24 +104,24 @@ def get_single(group, name, path=None, cache_file=None):
 
     raise NoSuchEntryPoint(group, name)
 
-def get_group_named(group, path=None, cache_file=None):
+def get_group_named(group, path=None):
     """Find a group of entry points with unique names.
 
     Returns a dictionary of names to :class:`EntryPoint` objects.
     """
     result = {}
-    for ep in get_group_all(group, path=path, cache_file=cache_file):
+    for ep in get_group_all(group, path=path):
         if ep.name not in result:
             result[ep.name] = ep
     return result
 
-def get_group_all(group, path=None, cache_file=None):
+def get_group_all(group, path=None):
     """Find all entry points in a group.
 
     Returns a list of :class:`EntryPoint` objects.
     """
     result = []
-    for distro, epinfo in iter_all_epinfo(path=path, cache_file=cache_file):
+    for distro, epinfo in iter_all_epinfo(path=path):
         if epinfo['group'] != group:
             continue
         distro_obj = Distribution(distro['name'], distro['version'])
