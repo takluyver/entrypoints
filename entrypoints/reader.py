@@ -190,16 +190,19 @@ class EntryPointsScanner(object):
         locations = self._abspath_multi(locations)
 
         cache_modified = False
-        for path in locations:
-            locn_ep = self.entrypoints_for_path(path)
-            if locn_ep != self.working_cache.get(path):
-                self.working_cache[path] = locn_ep
-                if path not in self.non_cacheable_paths:
-                    cache_modified = True
-            yield locn_ep
 
-        if cache_modified and self.cache_file:
-            self.write_user_cache()
+        try:
+            for path in locations:
+                locn_ep = self.entrypoints_for_path(path)
+                if locn_ep != self.working_cache.get(path):
+                    self.working_cache[path] = locn_ep
+                    if path not in self.non_cacheable_paths:
+                        cache_modified = True
+                yield locn_ep
+
+        finally:
+            if cache_modified and self.cache_file:
+                self.write_user_cache()
 
     def rebuild_cache(self, add_locations=None):
         """Rebuild the cache, discard cached data for paths which don't exist"""
