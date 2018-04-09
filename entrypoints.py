@@ -137,7 +137,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
                 ep_path = osp.join(folder, 'EGG-INFO', 'entry_points.txt')
                 if osp.isfile(ep_path):
                     cp = CaseSensitiveConfigParser()
-                    cp.read(ep_path)
+                    cp.read([ep_path])
                     yield cp, distro
 
             elif zipfile.is_zipfile(folder):
@@ -168,7 +168,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
             else:
                 distro = None
             cp = CaseSensitiveConfigParser()
-            cp.read(path)
+            cp.read([path])
             yield cp, distro
 
 def get_single(group, name, path=None):
