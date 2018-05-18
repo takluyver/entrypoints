@@ -80,7 +80,7 @@ class EntryPoint(object):
             for attr in self.object_name.split('.'):
                 obj = getattr(obj, attr)
         return obj
-    
+
     @classmethod
     def from_string(cls, epstr, name, distro=None):
         """Parse an entry point from the syntax in entry_points.txt
@@ -104,7 +104,7 @@ class Distribution(object):
     def __init__(self, name, version):
         self.name = name
         self.version = version
-    
+
     def __repr__(self):
         return "Distribution(%r, %r)" % (self.name, self.version)
 
@@ -132,7 +132,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
                 distro_names_seen.add(distro.name)
             else:
                 distro = None
-            
+
             if osp.isdir(folder):
                 ep_path = osp.join(folder, 'EGG-INFO', 'entry_points.txt')
                 if osp.isfile(ep_path):
@@ -152,7 +152,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
                     cp.read_file(fu,
                         source=osp.join(folder, 'EGG-INFO', 'entry_points.txt'))
                 yield cp, distro
-            
+
         for path in itertools.chain(
             glob.iglob(osp.join(folder, '*.dist-info', 'entry_points.txt')),
             glob.iglob(osp.join(folder, '*.egg-info', 'entry_points.txt'))
