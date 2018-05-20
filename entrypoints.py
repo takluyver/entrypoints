@@ -95,7 +95,7 @@ class EntryPoint(object):
         if m:
             mod, obj, extras = m.group('modulename', 'objectname', 'extras')
             if extras is not None:
-                extras = re.split(',\s*', extras)
+                extras = re.split(r',\s*', extras)
             return cls(name, mod, obj, extras, distro)
         else:
             raise BadEntryPoint(epstr)
