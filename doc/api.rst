@@ -32,7 +32,7 @@ EntryPoint objects
    .. attribute:: object_name
 
       The dotted object name within the module, or *None* if the entry point
-      refers to a module itselfs.
+      refers to a module itself.
 
    .. attribute:: extras
 
