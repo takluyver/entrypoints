@@ -38,7 +38,7 @@ EntryPoint objects
 
       Extra setuptools features related to this entry point as a list, or *None*
 
-   .. attribute:: distribution
+   .. attribute:: distro
 
       The distribution which advertised this entry point -
       a :class:`Distribution` instance or None
