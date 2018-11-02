@@ -15,8 +15,10 @@ import zipfile
 
 if sys.version_info[0] >= 3:
     import configparser
+    from functools import lru_cache
 else:
     from backports import configparser
+    from backports.functools_lru_cache import lru_cache
 
 entry_point_pattern = re.compile(r"""
 (?P<modulename>\w+(\.\w+)*)
@@ -110,8 +112,13 @@ class Distribution(object):
 
 
 def iter_files_distros(path=None, repeated_distro='first'):
-    if path is None:
-        path = sys.path
+    path = tuple(sys.path if path is None else path)
+    return _iter_files_distros(path, repeated_distro=repeated_distro)
+
+
+@lru_cache(maxsize=None)
+def _iter_files_distros(path, repeated_distro):
+    ret = []
 
     # Distributions found earlier in path will shadow those with the same name
     # found later. If these distributions used different module names, it may
@@ -138,7 +145,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
                 if osp.isfile(ep_path):
                     cp = CaseSensitiveConfigParser()
                     cp.read([ep_path])
-                    yield cp, distro
+                    ret.append((cp, distro))
 
             elif zipfile.is_zipfile(folder):
                 z = zipfile.ZipFile(folder)
@@ -151,7 +158,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
                     fu = io.TextIOWrapper(f)
                     cp.read_file(fu,
                         source=osp.join(folder, 'EGG-INFO', 'entry_points.txt'))
-                yield cp, distro
+                ret.append((cp, distro))
 
         for path in itertools.chain(
             glob.iglob(osp.join(folder, '*.dist-info', 'entry_points.txt')),
@@ -169,7 +176,10 @@ def iter_files_distros(path=None, repeated_distro='first'):
                 distro = None
             cp = CaseSensitiveConfigParser()
             cp.read([path])
-            yield cp, distro
+            ret.append((cp, distro))
+
+    return tuple(ret)
+
 
 def get_single(group, name, path=None):
     """Find a single entry point.

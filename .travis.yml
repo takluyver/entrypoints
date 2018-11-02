@@ -5,6 +5,6 @@ python:
   - "3.4"
   - "2.7"
 install:
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install configparser; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then pip install configparser backports.functools_lru_cache; fi
 # command to run tests
-script: py.test
+script: pytest
