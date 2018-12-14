@@ -55,7 +55,7 @@ class NoSuchEntryPoint(Exception):
         return "No {!r} entry point found in group {!r}".format(self.name, self.group)
 
 
-class CaseSensitivearser(configparser.ConfigParser):
+class CaseSensitiveConfigParser(configparser.ConfigParser):
     optionxform = staticmethod(str)
 
 
