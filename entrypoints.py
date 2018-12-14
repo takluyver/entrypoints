@@ -55,7 +55,7 @@ class NoSuchEntryPoint(Exception):
         return "No {!r} entry point found in group {!r}".format(self.name, self.group)
 
 
-class CaseSensitiveConfigParser(configparser.ConfigParser):
+class CaseSensitivearser(configparser.ConfigParser):
     optionxform = staticmethod(str)
 
 
@@ -146,7 +146,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
                     info = z.getinfo('EGG-INFO/entry_points.txt')
                 except KeyError:
                     continue
-                cp = CaseSensitiveConfigParser()
+                cp = CaseSensitiveConfigParser(delimiters=('=',))
                 with z.open(info) as f:
                     fu = io.TextIOWrapper(f)
                     cp.read_file(fu,
@@ -167,7 +167,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
                 distro_names_seen.add(distro.name)
             else:
                 distro = None
-            cp = CaseSensitiveConfigParser()
+            cp = CaseSensitiveConfigParser(delimiters=('=',))
             cp.read([path])
             yield cp, distro
 
