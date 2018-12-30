@@ -136,7 +136,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
             if osp.isdir(folder):
                 ep_path = osp.join(folder, 'EGG-INFO', 'entry_points.txt')
                 if osp.isfile(ep_path):
-                    cp = CaseSensitiveConfigParser()
+                    cp = CaseSensitiveConfigParser(delimiters=('=',))
                     cp.read([ep_path])
                     yield cp, distro
 
@@ -146,7 +146,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
                     info = z.getinfo('EGG-INFO/entry_points.txt')
                 except KeyError:
                     continue
-                cp = CaseSensitiveConfigParser()
+                cp = CaseSensitiveConfigParser(delimiters=('=',))
                 with z.open(info) as f:
                     fu = io.TextIOWrapper(f)
                     cp.read_file(fu,
@@ -167,7 +167,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
                 distro_names_seen.add(distro.name)
             else:
                 distro = None
-            cp = CaseSensitiveConfigParser()
+            cp = CaseSensitiveConfigParser(delimiters=('=',))
             cp.read([path])
             yield cp, distro
 
