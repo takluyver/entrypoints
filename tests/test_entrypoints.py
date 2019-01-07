@@ -36,8 +36,8 @@ def test_get_single():
     assert ep.object_name == 'abc'
 
     ep2 = entrypoints.get_single('entrypoints.test1', 'njn', sample_path)
-    assert ep.module_name == 'foo'
-    assert ep.object_name == 'abc'
+    assert ep2.module_name == 'qux.extn'
+    assert ep2.object_name == 'Njn.load'
 
 def test_dot_prefix():
     ep = entrypoints.get_single('blogtool.parsers', '.rst', sample_path)
