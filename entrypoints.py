@@ -26,6 +26,11 @@ entry_point_pattern = re.compile(r"""
 $
 """, re.VERBOSE)
 
+file_in_zip_pattern = re.compile(r"""
+(?P<dist_version>[^/\\]+)\.(dist|egg)-info
+[/\\]entry_points.txt$
+""", re.VERBOSE)
+
 __version__ = '0.2.3'
 
 class BadEntryPoint(Exception):
@@ -153,6 +158,32 @@ def iter_files_distros(path=None, repeated_distro='first'):
                         source=osp.join(folder, 'EGG-INFO', 'entry_points.txt'))
                 yield cp, distro
 
+        # zip imports, not egg
+        elif zipfile.is_zipfile(folder):
+            with zipfile.ZipFile(folder) as zf:
+                for info in zf.infolist():
+                    m = file_in_zip_pattern.match(info.filename)
+                    if not m:
+                        continue
+
+                    distro_name_version = m.group('dist_version')
+                    if '-' in distro_name_version:
+                        distro = Distribution(*distro_name_version.split('-', 1))
+
+                        if (repeated_distro == 'first') \
+                                and (distro.name in distro_names_seen):
+                            continue
+                        distro_names_seen.add(distro.name)
+                    else:
+                        distro = None
+
+                    cp = CaseSensitiveConfigParser(delimiters=('=',))
+                    with zf.open(info) as f:
+                        fu = io.TextIOWrapper(f)
+                        cp.read_file(fu, source=osp.join(folder, info.filename))
+                    yield cp, distro
+
+        # Regular file imports (not egg, not zip file)
         for path in itertools.chain(
             glob.iglob(osp.join(folder, '*.dist-info', 'entry_points.txt')),
             glob.iglob(osp.join(folder, '*.egg-info', 'entry_points.txt'))

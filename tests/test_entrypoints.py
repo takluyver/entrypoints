@@ -4,6 +4,7 @@
 import os.path as osp
 import pytest
 import warnings
+from zipfile import ZipFile
 
 import entrypoints
 
@@ -49,6 +50,26 @@ def test_dot_prefix():
 def test_case_sensitive():
     group = entrypoints.get_group_named('test.case_sensitive', sample_path)
     assert set(group.keys()) == {'Ptangle', 'ptangle'}
+
+def test_load_zip(tmpdir):
+    whl_file = str(tmpdir / 'parmesan-1.2.whl')
+    with ZipFile(whl_file, 'w') as whl:
+        whl.writestr('parmesan-1.2.dist-info/entry_points.txt',
+                     b'[entrypoints.test.inzip]\na = edam:gouda')
+        whl.writestr('gruyere-2!1b4.dev0.egg-info/entry_points.txt',
+                     b'[entrypoints.test.inzip]\nb = wensleydale:gouda')
+
+    ep = entrypoints.get_single('entrypoints.test.inzip', 'a', [str(whl_file)])
+    assert ep.module_name == 'edam'
+    assert ep.object_name == 'gouda'
+    assert ep.distro.name == 'parmesan'
+    assert ep.distro.version == '1.2'
+
+    ep2 = entrypoints.get_single('entrypoints.test.inzip', 'b', [str(whl_file)])
+    assert ep2.module_name == 'wensleydale'
+    assert ep2.object_name == 'gouda'
+    assert ep2.distro.name == 'gruyere'
+    assert ep2.distro.version == '2!1b4.dev0'
 
 def test_load():
     ep = entrypoints.EntryPoint('get_ep', 'entrypoints', 'get_single', None)
