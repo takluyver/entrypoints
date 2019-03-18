@@ -17,6 +17,23 @@ sample_path = [
     osp.join(samples_dir, 'packages2', 'qux-0.4.egg'),
 ]
 
+def test_iter_files_distros():
+    result = entrypoints.iter_files_distros(path=sample_path)
+    # the sample_path has 4 unique items so iter_files_distros returns 4 tuples
+    assert len(list(result)) == 4
+
+    # testing a development, egg aka installed with pip install -e .
+    # these don't have version info in the .egg-info directory name
+    # (eg dev-0.0.1.egg-info)
+    path_with_dev = [osp.join(samples_dir, 'packages4')]
+    result = entrypoints.iter_files_distros(path=path_with_dev)
+    assert len(list(result)) == 1
+
+    # duplicate dev versions should still return one result
+    path_with_dev_duplicates = path_with_dev + path_with_dev
+    result = entrypoints.iter_files_distros(path=path_with_dev_duplicates)
+    assert len(list(result)) == 1
+
 def test_get_group_all():
     group = entrypoints.get_group_all('entrypoints.test1', sample_path)
     print(group)
