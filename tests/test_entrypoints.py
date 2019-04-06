@@ -21,7 +21,7 @@ def test_get_group_all():
     group = entrypoints.get_group_all('entrypoints.test1', sample_path)
     print(group)
     assert len(group) == 5
-    assert set(ep.name for ep in group) == {'abc', 'rew', 'opo', 'njn'}
+    assert {ep.name for ep in group} == {'abc', 'rew', 'opo', 'njn'}
 
 def test_get_group_named():
     group = entrypoints.get_group_named('entrypoints.test1', sample_path)
