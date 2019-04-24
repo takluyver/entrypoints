@@ -11,4 +11,4 @@ You can install it from PyPI with ``pip install entrypoints``.
 
 To advertise entry points when distributing a package, see
 `entry_points in the Python Packaging User Guide
-<https://packaging.python.org/en/latest/distributing.html#entry-points>`_.
+<https://packaging.python.org/guides/distributing-packages-using-setuptools/#entry-points>`_.
