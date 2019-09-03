@@ -114,3 +114,10 @@ def test_parse():
 def test_parse_bad():
     with pytest.raises(entrypoints.BadEntryPoint):
         entrypoints.EntryPoint.from_string("this won't work", 'foo')
+
+def test_repr():
+    ep = entrypoints.EntryPoint('foo', 'some.module', 'some.attr',
+                                extras=['extra1', 'extra2'], distro='distro')
+    assert repr(ep) == ("EntryPoint('foo', 'some.module', 'some.attr', "
+                        "extras=['extra1', 'extra2'], distro='distro')")
+
