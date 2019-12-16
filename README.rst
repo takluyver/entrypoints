@@ -14,36 +14,12 @@ To advertise entry points when distributing a package, see
 <https://packaging.python.org/guides/distributing-packages-using-setuptools/#entry-points>`_.
 
 The ``pkg_resources`` module distributed with ``setuptools`` provides a way to
-discover entrypoints as well, but merely *importing* ``pkg_resources`` causes
-every package installed with ``setuptools`` to be imported. Illustration:
+discover entrypoints as well, but it contains other functionality unrelated to
+entrypoint discovery, and it does a lot of work at import time.  Merely
+*importing* ``pkg_resources`` causes it to scan the files of all installed
+packages. Thus, in environments where a large number of packages are installed,
+importing ``pkg_resources`` can be very slow (several seconds).
 
-.. code:: python
-
-   >>> import sys
-   >>> len(sys.modules)
-   67
-   >>> import pkg_resources
-   >>> len(sys.modules)  # result scales with number of installed packages
-   174
-
-By contrast, importing ``entrypoints`` does not scan every installed package;
-it just imports its own dependencies.
-
-.. code:: python
-
-   >>> import sys
-   >>> len(sys.modules)
-   67
-   >>> import entrypoints
-   >>> len(sys.modules)  # result is fixed
-   97
-
-Further, discovering an entry point does not cause anything to be imported.
-
-.. code:: python
-
-   >>> eps = entrypoints.get_group_named('some_group')
-   >>> len(sys.modules)  # same result as above
-   97
-
-Only upon *loading* the entrypoints are relevant packages imported.
+By contrast, ``entrypoints`` is focused solely on entrypoint discovery and it
+is faster. Importing ``entrypoints`` does not scan anything, and getting a
+given entrypoint group performs a more focused scan.
