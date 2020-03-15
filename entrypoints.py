@@ -110,6 +110,18 @@ class Distribution(object):
         self.name = name
         self.version = version
 
+    @classmethod
+    def from_name_version(cls, name):
+        """Parse a distribution from a "name-version" string
+
+        :param str name: The name-version string (entrypoints-0.3)
+        Returns an :class:`Distribution` object
+        """
+        version = None
+        if '-' in name:
+            name, version = name.split('-', 1)
+        return cls(name, version)
+
     def __repr__(self):
         return "Distribution(%r, %r)" % (self.name, self.version)
 
@@ -128,15 +140,12 @@ def iter_files_distros(path=None, repeated_distro='first'):
         if folder.rstrip('/\\').endswith('.egg'):
             # Gah, eggs
             egg_name = osp.basename(folder)
-            if '-' in egg_name:
-                distro = Distribution(*egg_name.split('-')[:2])
+            distro = Distribution.from_name_version(egg_name.split(".egg")[0])
 
-                if (repeated_distro == 'first') \
-                        and (distro.name in distro_names_seen):
-                    continue
-                distro_names_seen.add(distro.name)
-            else:
-                distro = None
+            if (repeated_distro == 'first') \
+                    and (distro.name in distro_names_seen):
+                continue
+            distro_names_seen.add(distro.name)
 
             if osp.isdir(folder):
                 ep_path = osp.join(folder, 'EGG-INFO', 'entry_points.txt')
@@ -154,8 +163,8 @@ def iter_files_distros(path=None, repeated_distro='first'):
                 cp = CaseSensitiveConfigParser(delimiters=('=',))
                 with z.open(info) as f:
                     fu = io.TextIOWrapper(f)
-                    cp.read_file(fu,
-                        source=osp.join(folder, 'EGG-INFO', 'entry_points.txt'))
+                    cp.read_file(fu, source=osp.join(
+                        folder, 'EGG-INFO', 'entry_points.txt'))
                 yield cp, distro
 
         # zip imports, not egg
@@ -167,15 +176,12 @@ def iter_files_distros(path=None, repeated_distro='first'):
                         continue
 
                     distro_name_version = m.group('dist_version')
-                    if '-' in distro_name_version:
-                        distro = Distribution(*distro_name_version.split('-', 1))
+                    distro = Distribution.from_name_version(distro_name_version)
 
-                        if (repeated_distro == 'first') \
-                                and (distro.name in distro_names_seen):
-                            continue
-                        distro_names_seen.add(distro.name)
-                    else:
-                        distro = None
+                    if (repeated_distro == 'first') \
+                            and (distro.name in distro_names_seen):
+                        continue
+                    distro_names_seen.add(distro.name)
 
                     cp = CaseSensitiveConfigParser(delimiters=('=',))
                     with zf.open(info) as f:
@@ -189,15 +195,13 @@ def iter_files_distros(path=None, repeated_distro='first'):
             glob.iglob(osp.join(folder, '*.egg-info', 'entry_points.txt'))
         ):
             distro_name_version = osp.splitext(osp.basename(osp.dirname(path)))[0]
-            if '-' in distro_name_version:
-                distro = Distribution(*distro_name_version.split('-', 1))
+            distro = Distribution.from_name_version(distro_name_version)
 
-                if (repeated_distro == 'first') \
-                        and (distro.name in distro_names_seen):
-                    continue
-                distro_names_seen.add(distro.name)
-            else:
-                distro = None
+            if (repeated_distro == 'first') \
+                    and (distro.name in distro_names_seen):
+                continue
+            distro_names_seen.add(distro.name)
+
             cp = CaseSensitiveConfigParser(delimiters=('=',))
             cp.read([path])
             yield cp, distro
