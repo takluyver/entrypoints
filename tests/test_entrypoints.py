@@ -30,7 +30,7 @@ def test_iter_files_distros():
     assert len(list(result)) == 1
 
     # duplicate dev versions should still return one result
-    path_with_dev_duplicates = path_with_dev + path_with_dev
+    path_with_dev_duplicates = path_with_dev * 2
     result = entrypoints.iter_files_distros(path=path_with_dev_duplicates)
     assert len(list(result)) == 1
 
