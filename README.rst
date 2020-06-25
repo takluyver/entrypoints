@@ -13,6 +13,9 @@ To advertise entry points when distributing a package, see
 `entry_points in the Python Packaging User Guide
 <https://packaging.python.org/guides/distributing-packages-using-setuptools/#entry-points>`_.
 
+The ``importlib.metadata` module distributed with ``Python``
+provides the preferred way to discover entrypoints `<https://docs.python.org/3/library/importlib.metadata.html#entry-points>_.
+
 The ``pkg_resources`` module distributed with ``setuptools`` provides a way to
 discover entrypoints as well, but it contains other functionality unrelated to
 entrypoint discovery, and it does a lot of work at import time.  Merely
