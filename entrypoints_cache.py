@@ -64,6 +64,12 @@ def _hash_settings_for_path(path):
     paths = []
     stat = os.stat
     h = hashlib.sha1()
+
+    # Tie the cache to the python interpreter, in case it is part of a
+    # virtualenv.
+    h.update(sys.executable.encode('utf-8'))
+    h.update(sys.prefix.encode('utf-8'))
+
     for entry in path:
         mtime = _get_mtime(entry)
         h.update(entry.encode('utf-8'))
@@ -94,7 +100,11 @@ def _build_cacheable_data(path):
                 (name, epstr, distro.name, distro.version)
                 for name, epstr in group_val.items()
             )
-    return {'groups': groups}
+    return {
+        'groups': groups,
+        'sys.executable': sys.executable,
+        'sys.prefix': sys.prefix,
+    }
 
 
 class Cache:
