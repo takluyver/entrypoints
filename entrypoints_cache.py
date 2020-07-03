@@ -1,7 +1,9 @@
 """Use a cache layer in front of entry point scanning."""
 
 import errno
+import glob
 import hashlib
+import itertools
 import json
 import logging
 import os
@@ -40,6 +42,20 @@ def _get_cache_dir():
                or os.path.expanduser('~\\AppData\\Local\\Python Entry Points')
 
 
+def _get_mtime(name):
+    try:
+        s = os.stat(name)
+        return s.st_mtime
+    except OSError as err:
+        if err.errno != errno.ENOENT:
+            raise
+    return -1.0
+
+
+def _ftobytes(f):
+    return struct.Struct('f').pack(f)
+
+
 def _hash_settings_for_path(path):
     """Return a hash and the path settings that created it.
     """
@@ -47,16 +63,23 @@ def _hash_settings_for_path(path):
     stat = os.stat
     h = hashlib.sha1()
     for entry in path:
+        mtime = _get_mtime(entry)
         h.update(entry.encode('utf-8'))
-        try:
-            s = stat(entry)
-        except OSError as err:
-            if err.errno == errno.ENOENT:
-                continue
-            raise
-        else:
-            paths.append((entry, s.st_mtime))
-            h.update(struct.Struct('f').pack(s.st_mtime))
+        h.update(_ftobytes(mtime))
+        paths.append((entry, mtime))
+
+        for ep_file in itertools.chain(
+                glob.iglob(os.path.join(entry,
+                                        '*.dist-info',
+                                        'entry_points.txt')),
+                glob.iglob(os.path.join(entry,
+                                        '*.egg-info',
+                                        'entry_points.txt'))
+        ):
+            mtime = _get_mtime(ep_file)
+            h.update(ep_file.encode('utf-8'))
+            h.update(_ftobytes(mtime))
+            paths.append((ep_file, mtime))
 
     return (h.hexdigest(), paths)
 
