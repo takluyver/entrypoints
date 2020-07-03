@@ -29,8 +29,9 @@ def _get_cache_dir():
     # Linux, Unix, AIX, etc.
     if os.name == 'posix' and sys.platform != 'darwin':
         # use ~/.cache if empty OR not set
-        return os.environ.get("XDG_CACHE_HOME", None) \
-              or os.path.expanduser('~/.cache/python-entrypoints')
+        base_path = os.environ.get("XDG_CACHE_HOME", None) \
+              or os.path.expanduser('~/.cache')
+        return os.path.join(base_path, 'python-entrypoints')
 
     # Mac OS
     elif sys.platform == 'darwin':
@@ -38,8 +39,9 @@ def _get_cache_dir():
 
     # Windows (hopefully)
     else:
-        return os.environ.get('LOCALAPPDATA', None) \
-               or os.path.expanduser('~\\AppData\\Local\\Python Entry Points')
+        base_path = os.environ.get('LOCALAPPDATA', None) \
+               or os.path.expanduser('~\\AppData\\Local')
+        return os.path.join(base_path, 'Python Entry Points')
 
 
 def _get_mtime(name):
