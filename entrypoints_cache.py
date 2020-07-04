@@ -178,11 +178,36 @@ get_group_named = _c.get_group_named
 get_single = _c.get_single
 
 
+def _timing_setup():
+    # Delete any existing cache file
+    digest, path_values = _hash_settings_for_path(sys.path)
+    filename = os.path.join(_get_cache_dir(), digest)
+    try:
+        os.unlink(filename)
+        log.debug('removed %s for test', filename)
+    except FileNotFoundError:
+        pass
+
+
+def _timing_test():
+    list(get_group_all(sys.argv[1]))
+
+
 if __name__ == '__main__':
+    import timeit
+
     logging.basicConfig(
         stream=sys.stderr,
         level=logging.DEBUG,
     )
-    for ep in get_group_all(sys.argv[1]):
-        print(ep)
-        ep.load()
+
+
+    t = timeit.Timer(
+        'entrypoints_cache._timing_test()',
+        'import entrypoints_cache; entrypoints_cache._timing_setup()',
+    )
+    first = t.timeit(1)
+    second = t.timeit(1)
+    print('1', first)
+    print('2', second)
+    print(first /second)
