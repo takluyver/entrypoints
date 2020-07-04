@@ -113,10 +113,16 @@ class Cache:
         if cache_dir is None:
             cache_dir = _get_cache_dir()
         self._dir = cache_dir
+        self._internal = {}
 
     def _get_data_for_path(self, path):
         if path is None:
             path = sys.path
+
+        internal_key = tuple(path)
+        if internal_key in self._internal:
+            return self._internal[internal_key]
+
         digest, path_values = _hash_settings_for_path(path)
         filename = os.path.join(self._dir, digest)
         try:
@@ -134,6 +140,8 @@ class Cache:
             except (IOError, OSError):
                 # Could not create cache dir or write file.
                 pass
+
+        self._internal[internal_key] = data
         return data
 
     def get_group_all(self, group, path=None):
