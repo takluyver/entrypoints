@@ -190,9 +190,11 @@ def iter_files_distros(path=None, repeated_distro='first'):
                     yield cp, distro
 
         # Regular file imports (not egg, not zip file)
+        # Fall back to unescaped for python versions < 3.4
+        folder_glob = glob.escape(folder) if hasattr(glob, 'escape') else folder
         for path in itertools.chain(
-            glob.iglob(osp.join(glob.escape(folder), '*.dist-info', 'entry_points.txt')),
-            glob.iglob(osp.join(glob.escape(folder), '*.egg-info', 'entry_points.txt'))
+            glob.iglob(osp.join(folder_glob, '*.dist-info', 'entry_points.txt')),
+            glob.iglob(osp.join(folder_glob, '*.egg-info', 'entry_points.txt'))
         ):
             distro_name_version = osp.splitext(osp.basename(osp.dirname(path)))[0]
             distro = Distribution.from_name_version(distro_name_version)
