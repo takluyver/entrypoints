@@ -1,3 +1,7 @@
+**This package is in maintenance-only mode.** New code should use the
+`importlib.metadata module <https://docs.python.org/3/library/importlib.metadata.html>`_
+in the Python standard library to find and load entry points.
+
 Entry points are a way for Python packages to advertise objects with some
 common interface. The most common examples are ``console_scripts`` entry points,
 which define shell commands by identifying a Python function to run.
