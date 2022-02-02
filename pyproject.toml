@@ -10,11 +10,9 @@ home-page = "https://github.com/takluyver/entrypoints"
 description-file = "README.rst"
 classifiers = [
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 2",
     "Programming Language :: Python :: 3"
 ]
-requires-python = ">=2.7"
-requires = ["configparser (>=3.5); python_version == '2.7'"]
+requires-python = ">=3.6"
 
 [tool.flit.metadata.urls]
 Documentation = "https://entrypoints.readthedocs.io/en/latest/"
