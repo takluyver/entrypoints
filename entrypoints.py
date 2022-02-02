@@ -13,10 +13,7 @@ import sys
 import warnings
 import zipfile
 
-if sys.version_info[0] >= 3:
-    import configparser
-else:
-    from backports import configparser
+import configparser
 
 entry_point_pattern = re.compile(r"""
 (?P<modulename>\w+(\.\w+)*)
@@ -191,8 +188,8 @@ def iter_files_distros(path=None, repeated_distro='first'):
 
         # Regular file imports (not egg, not zip file)
         for path in itertools.chain(
-            glob.iglob(osp.join(folder, '*.dist-info', 'entry_points.txt')),
-            glob.iglob(osp.join(folder, '*.egg-info', 'entry_points.txt'))
+            glob.iglob(osp.join(glob.escape(folder), '*.dist-info', 'entry_points.txt')),
+            glob.iglob(osp.join(glob.escape(folder), '*.egg-info', 'entry_points.txt'))
         ):
             distro_name_version = osp.splitext(osp.basename(osp.dirname(path)))[0]
             distro = Distribution.from_name_version(distro_name_version)
