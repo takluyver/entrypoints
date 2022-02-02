@@ -23,3 +23,11 @@ importing ``pkg_resources`` can be very slow (several seconds).
 By contrast, ``entrypoints`` is focused solely on entrypoint discovery and it
 is faster. Importing ``entrypoints`` does not scan anything, and getting a
 given entrypoint group performs a more focused scan.
+
+When there are multiple versions of the same distribution in different
+directories on ``sys.path``, ``entrypoints`` follows the rule that the first
+one wins.  In most cases, this follows the logic of imports.  Similarly,
+Entrypoints relies on ``pip`` to ensure that only one ``.dist-info`` or
+``.egg-info`` directory exists for each installed package.  There is no reliable
+way to pick which of several `.dist-info` folders accurately relates to the
+importable modules.
