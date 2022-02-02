@@ -28,7 +28,7 @@ file_in_zip_pattern = re.compile(r"""
 [/\\]entry_points.txt$
 """, re.VERBOSE)
 
-__version__ = '0.3'
+__version__ = '0.4'
 
 class BadEntryPoint(Exception):
     """Raised when an entry point can't be parsed.
