@@ -242,6 +242,65 @@ def get_group_all(group, path=None):
 
     return result
 
+# This is utility Function to evalute text quality using spacy for each key-value pair:  
+def evaluate_text_quality_with_spacy(text):
+    """
+    Use spaCy to analyze text and determine confidence score.
+    """
+    doc = nlp(text)
+    confidence = 5.0  # Start with a neutral score (5.0)
+
+    # Named Entities - Slight boost for entities (max +1.0)
+    if len(doc.ents) > 0:
+        confidence += 0.5
+    
+    # Sentence Structure - Only slight boost for detecting sentences
+    if len(list(doc.sents)) > 0:
+        confidence += 0.5  
+
+    # Alphanumeric Ratio - Stricter scoring for non-alphanumeric content
+    total_chars = len(text)
+    alphanumeric_chars = len(re.findall(r'[a-zA-Z0-9]', text))
+    alphanumeric_ratio = alphanumeric_chars / total_chars if total_chars > 0 else 0
+    
+    if alphanumeric_ratio > 0.85:
+        confidence += 0.5  # Small bonus for very clean text
+    elif alphanumeric_ratio > 0.7:
+        confidence += 0.2  # Very small bonus
+    else:
+        confidence -= 1.5  # Heavier penalty for poor character content
+
+    # Word Density Check - Stricter penalties for low density
+    words = text.split()
+    word_count = len(words)
+    word_density = word_count / total_chars if total_chars > 0 else 0
+
+    if word_density > 0.2:
+        confidence += 0.5  # Good word density (small boost)
+    elif word_density > 0.1:
+        confidence += 0.2  # Slight boost
+    else:
+        confidence -= 1.0  # Heavier penalty for poor density
+
+    # Text Length Penalty - Heavier penalty for very short text
+    if total_chars < 30:
+        confidence -= 2.0  # Significant penalty for short text
+    elif total_chars < 100:
+        confidence -= 1.0  # Moderate penalty for short-ish text
+    elif total_chars > 500:
+        confidence += 0.5  # Small boost for longer, well-structured text
+
+    # Ensure score is between 1.0 and 10.0
+    confidence = max(1.0, min(confidence, 10.0))
+    
+    print(f"Confidence breakdown: {confidence}")
+    
+    return round(confidence, 1)
+# In order to use this functionality in other function use like below:
+# confidence = evaluate_text_quality_with_spacy(text)
+
+
+
 if __name__ == '__main__':
     import pprint
     pprint.pprint(get_group_all('console_scripts'))
