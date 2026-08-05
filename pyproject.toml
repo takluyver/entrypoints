@@ -1,18 +1,20 @@
 [build-system]
-requires = ["flit_core  >=2,<4"]
+requires = ["flit_core >=2,<5"]
 build-backend = "flit_core.buildapi"
 
-[tool.flit.metadata]
-module = "entrypoints"
-author = "Thomas Kluyver"
-author-email = "thomas@kluyver.me.uk"
-home-page = "https://github.com/takluyver/entrypoints"
-description-file = "README.rst"
+[project]
+name = "entrypoints"
+authors = [
+    { name = "Thomas Kluyver", email = "thomas@kluyver.me.uk" },
+]
+readme = "README.rst"
+license = "MIT"
+requires-python = ">=3.6"
+dynamic = ["version", "description"]
 classifiers = [
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3"
 ]
-requires-python = ">=3.6"
 
-[tool.flit.metadata.urls]
+[project.urls]
+Homepage = "https://github.com/takluyver/entrypoints"
 Documentation = "https://entrypoints.readthedocs.io/en/latest/"
