@@ -134,7 +134,7 @@ def iter_files_distros(path=None, repeated_distro='first'):
     distro_names_seen = set()
 
     for folder in path:
-        if folder.rstrip('/\\').endswith('.egg'):
+        if str(folder).rstrip('/\\').endswith('.egg'):
             # Gah, eggs
             egg_name = osp.basename(folder)
             distro = Distribution.from_name_version(egg_name.split(".egg")[0])
