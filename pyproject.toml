@@ -18,3 +18,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/takluyver/entrypoints"
 Documentation = "https://entrypoints.readthedocs.io/en/latest/"
+
+[tool.flit.sdist]
+include = ["doc/", "tests/", ".github/"]
+exclude = ["doc/_build/"]
